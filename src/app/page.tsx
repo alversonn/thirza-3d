@@ -1,10 +1,22 @@
 'use client';
-import React, { Suspense, useEffect, useState } from "react";
+
+import type { ThreeElements } from "@react-three/fiber";
+import React, { Suspense, useEffect, useState, type PropsWithChildren } from "react";
 import { motion } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF, Html, useProgress } from "@react-three/drei";
-import { Bounds, Center } from "@react-three/drei";
+import { OrbitControls, useGLTF, Html, useProgress, Bounds, Center } from "@react-three/drei";
+
+/* =====================================================
+   Types
+   ===================================================== */
+type Mode = "lily" | "shinobi";
+
+type NavLinkProps = React.ComponentProps<"a"> & {
+  active?: boolean;
+};
+
+type ModelProps = ThreeElements["group"];
 
 /* =====================================================
    Config
@@ -25,9 +37,9 @@ const THEMES = {
     textAccent: "text-amber-800",
     button: "bg-stone-900 text-white hover:opacity-90",
   },
-};
+} as const;
 
-const HERO_COPY = {
+const HERO_COPY: Record<Mode, string> = {
   lily: `Congratulations on your final defense, ${RECIPIENT}🤩🥳. Like a lily that rises with quiet grace, your work has bloomed in full. Keep your feet humble and your vision steady as you step forward.`,
   shinobi: `Congratulations on your final defense, ${RECIPIENT}🤩🥳. In the way of a shinobi, true strength is quiet and resolve steady. You moved with discipline, stayed the course, and met the moment. Walk forward with calm confidence your nindō is clear.`,
 };
@@ -35,22 +47,28 @@ const HERO_COPY = {
 /* =====================================================
    Helpers
    ===================================================== */
-const Section = ({ id, children }: React.PropsWithChildren<{ id: string }>) =>
-  <section id={id} className="py-16">{children}</section>;
+const Section: React.FC<PropsWithChildren<{ id: string }>> = ({ id, children }) => (
+  <section id={id} className="py-16">{children}</section>
+);
 
-const NavLink = ({ active, children, ...props }: any) => (
-  <a {...props} className={`text-sm tracking-wide px-3 py-2 rounded-full transition ${active ? "bg-black text-white" : "hover:bg-black/5"}`}>{children}</a>
+const NavLink: React.FC<NavLinkProps> = ({ active = false, children, className, ...props }) => (
+  <a
+    {...props}
+    className={`text-sm tracking-wide px-3 py-2 rounded-full transition ${active ? "bg-black text-white" : "hover:bg-black/5"} ${className ?? ""}`}
+  >
+    {children}
+  </a>
 );
 
 /* =====================================================
    3D Models (GLB local)
    files: public/models/lilies.glb & public/models/uzumaki.glb
    ===================================================== */
-function LilyModel(props: any) {
+function LilyModel(props: ModelProps) {
   const { scene } = useGLTF("/models/lilies.glb");
   return <primitive object={scene} {...props} />;
 }
-function NarutoModel(props: any) {
+function NarutoModel(props: ModelProps) {
   const { scene } = useGLTF("/models/uzumaki.glb");
   return <primitive object={scene} {...props} />;
 }
@@ -66,7 +84,7 @@ function Loader() {
   );
 }
 
-const ModelViewer = ({ mode }: { mode: "lily" | "shinobi" }) => (
+const ModelViewer: React.FC<{ mode: Mode }> = ({ mode }) => (
   <div className="w-full max-w-xl aspect-[4/3] rounded-3xl overflow-hidden shadow ring-1 ring-black/10 bg-transparent">
     <Canvas dpr={[1, 2]} camera={{ position: [1.6, 1.2, 2.2], fov: 45 }} gl={{ alpha: true }} style={{ background: "transparent" }}>
       <ambientLight intensity={0.7} />
@@ -88,7 +106,7 @@ const ModelViewer = ({ mode }: { mode: "lily" | "shinobi" }) => (
    Main – Landing (Home & Letter only)
    ===================================================== */
 export default function GiftWebThirzaLanding3D() {
-  const [mode, setMode] = useState<"lily" | "shinobi">("lily");
+  const [mode, setMode] = useState<Mode>("lily");
   const [tab, setTab] = useState<"home" | "letter">("home");
   const [mounted, setMounted] = useState(false);
   const theme = THEMES[mode];
@@ -132,7 +150,6 @@ export default function GiftWebThirzaLanding3D() {
           </div>
           {/* Right – 3D viewer */}
           <div className="flex justify-center lg:justify-end">
-            {/* penting: render Canvas hanya setelah mounted */}
             {mounted && <ModelViewer mode={mode} />}
           </div>
         </div>
